@@ -1,1 +1,114 @@
-# My-money-
+# My-money-<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>极简记账 App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col font-sans">
+
+    <header class="bg-blue-600 text-white p-6 pt-10 rounded-b-3xl shadow-lg">
+        <p class="text-blue-100 text-sm">本月支出</p>
+        <h1 class="text-4xl font-bold mt-1" id="totalAmount">¥ 0.00</h1>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 space-y-4" id="mainContent">
+        <div id="listContainer" class="space-y-3"></div>
+    </main>
+
+    <nav class="bg-white border-t flex justify-around items-center py-3 safe-area-bottom shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <button class="flex flex-col items-center text-blue-600">
+            <i class="fas fa-list-ul text-xl"></i>
+            <span class="text-xs mt-1">明细</span>
+        </button>
+        <button onclick="openModal()" class="bg-blue-600 text-white w-14 h-14 rounded-full flex items-center justify-center -mt-10 shadow-lg border-4 border-white active:scale-95 transition">
+            <i class="fas fa-plus text-2xl"></i>
+        </button>
+        <button class="flex flex-col items-center text-gray-400">
+            <i class="fas fa-chart-pie text-xl"></i>
+            <span class="text-xs mt-1">统计</span>
+        </button>
+    </nav>
+
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden items-end transition-opacity">
+        <div class="bg-white w-full rounded-t-3xl p-6 animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">新增支出</h2>
+                <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="itemName" placeholder="买了什么？" class="w-full bg-gray-100 p-4 rounded-2xl outline-none">
+                <div class="relative">
+                    <span class="absolute left-4 top-4 font-bold text-gray-500">¥</span>
+                    <input type="number" id="itemPrice" placeholder="0.00" class="w-full bg-gray-100 p-4 pl-8 rounded-2xl outline-none font-mono text-xl">
+                </div>
+                <button onclick="saveItem()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-md">保存记账</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data = JSON.parse(localStorage.getItem('app_records')) || [];
+
+        function render() {
+            const container = document.getElementById('listContainer');
+            const totalDisplay = document.getElementById('totalAmount');
+            container.innerHTML = '';
+            let total = 0;
+
+            data.sort((a, b) => b.time - a.time).forEach((item, index) => {
+                total += parseFloat(item.price);
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border border-gray-100";
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800">${item.name}</p>
+                            <p class="text-xs text-gray-400">${new Date(item.time).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="font-bold text-lg">-¥${item.price}</span>
+                        <button onclick="deleteItem(${index})" class="text-xs text-red-300">删除</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            totalDisplay.innerText = `¥ ${total.toFixed(2)}`;
+            localStorage.setItem('app_records', JSON.stringify(data));
+        }
+
+        function openModal() { document.getElementById('modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+        function saveItem() {
+            const name = document.getElementById('itemName').value;
+            const price = document.getElementById('itemPrice').value;
+            if (name && price) {
+                data.push({ name, price, time: Date.now() });
+                render();
+                closeModal();
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemPrice').value = '';
+            }
+        }
+
+        function deleteItem(index) {
+            data.splice(index, 1);
+            render();
+        }
+
+        render();
+    </script>
+</body>
+</html>
